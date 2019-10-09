@@ -1,0 +1,20 @@
+cflags = -Wall -Wextra -std=c11 -Os -g
+
+rule cc
+  command = cc $cflags -o $out -c $in
+
+rule ld
+  command = cc $cflags -o $out $in
+
+rule mksyscallprint
+  command = ./mksyscallprint.py > $out
+
+rule filippo
+  command = curl -L https://filippo.io/linux-syscall-table/TABELLA_64.json > $out
+
+build TABELLA_64.json: filippo
+build syscallprint.c: mksyscallprint TABELLA_64.json mksyscallprint.py
+build mehtrace.o: cc mehtrace.c
+build syscallprint.o: cc syscallprint.c
+  cflags = $cflags -Wno-unused
+build mehtrace: ld mehtrace.o syscallprint.o

@@ -1,0 +1,6 @@
+mehtrace
+*.o
+.ninja_deps
+.ninja_log
+*.py[cod]
+__pycache__/
