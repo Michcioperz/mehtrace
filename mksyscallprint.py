@@ -46,6 +46,11 @@ print_functions["const char __user *"] = print_functions["char __user *"]
 
 print_function_idx = list(print_functions.keys())
 
+type_overrides = dict(
+    mmap=dict(addr="void *"),
+    brk=dict(brk="void *"),
+)
+
 missing_types = set()
 
 arg_regs = ['rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9']
@@ -67,14 +72,15 @@ for nr, name, entrypoint, srcfile, args in calls.values():
     print(f'fputs("{name}(", stderr);')
     if args:
         for reg_i, arg in enumerate(args):
+            arg_type = type_overrides.setdefault(name, {}).get(arg[1], arg[0])
             print(f'fputs("{arg[1]}=", stderr);')
             try:
-                print(f'print_type_{print_function_idx.index(arg[0])}(child, (void*)regs->{arg_regs[reg_i]});')
+                print(f'print_type_{print_function_idx.index(arg_type)}(child, (void*)regs->{arg_regs[reg_i]});')
             except ValueError:
-                if arg[0] not in missing_types:
-                    missing_types.add(arg[0])
-                    warnings.warn(f"Missing type: {arg[0]!r}")
-                print(f'fputs("{arg[0]}", stderr);')
+                if arg_type not in missing_types:
+                    missing_types.add(arg_type)
+                    warnings.warn(f"Missing type: {arg_type!r}")
+                print(f'fputs("{arg_type}", stderr);')
             print('fputs(",", stderr);')
     print('fputs(")", stderr);')
     print('}')
