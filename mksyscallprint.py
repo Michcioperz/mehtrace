@@ -3,7 +3,7 @@ import json, warnings
 with open('TABELLA_64.json') as f:
     calls = json.load(f)
 
-check_ptr = 'if (childAddr == NULL) return; '
+check_ptr = 'if (childAddr == NULL) { fputs("NULL", stderr); return; } '
 
 print_functions = {
         "size_t": 'fprintf(stderr, "%zu", (size_t)childAddr);',
@@ -16,8 +16,33 @@ print_functions = {
         "unsigned": 'fprintf(stderr, "%u", (unsigned)childAddr);',
         "unsigned int": 'fprintf(stderr, "%u", (unsigned int)childAddr);',
         "int": 'fprintf(stderr, "%d", (int)childAddr);',
-#        "char __user *": check_ptr+'char str[sizeof(childAddr)+1]; str[sizeof(childAddr)] = 0; for (void *data = 0xFFFFFFFFFFFFFFFF; 
+        "void *": check_ptr+'fprintf(stderr, "%p", (void *)childAddr);',
+        "char __user *": check_ptr+r'''
+        char str[sizeof(childAddr)+1];
+        str[sizeof(childAddr)] = 0;
+        fputc('"', stderr);
+        for (*((uint64_t *) str) = 0xFFFFFFFFFFFFFFFF; strlen(str) >= 8; childAddr += sizeof(childAddr)) {
+            *((uint64_t *)str) = ptrace(PTRACE_PEEKTEXT, child, childAddr, NULL);
+            for (char *ptr = &str[0]; *ptr != 0; ptr++) {
+                switch (*ptr) {
+                    case '\a': fputs("\\a",  stderr); break;
+                    case '\b': fputs("\\b",  stderr); break;
+                    case '\f': fputs("\\f",  stderr); break;
+                    case '\n': fputs("\\n",  stderr); break;
+                    case '\r': fputs("\\r",  stderr); break;
+                    case '\t': fputs("\\t",  stderr); break;
+                    case '"':  fputs("\\\"", stderr); break;
+                    default:
+                        if (isprint(*ptr))
+                            fputc(*ptr, stderr);
+                        else
+                            fprintf(stderr, "\\x%x", *ptr);
+                }
+            }
+        }
+        fputc('"', stderr);''',
 }
+print_functions["const char __user *"] = print_functions["char __user *"]
 
 print_function_idx = list(print_functions.keys())
 
@@ -25,7 +50,7 @@ missing_types = set()
 
 arg_regs = ['rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9']
 
-for header in ['stdio.h', 'unistd.h', 'sys/types.h', 'stdint.h']:
+for header in ['stdio.h', 'unistd.h', 'sys/types.h', 'stdint.h', 'ctype.h', 'sys/ptrace.h', 'string.h']:
     print(f'#include <{header}>')
 print('#include "syscallprint.h"')
 
