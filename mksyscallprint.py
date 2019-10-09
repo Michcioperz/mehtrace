@@ -76,13 +76,20 @@ for nr, name, entrypoint, srcfile, args in calls.values():
                     warnings.warn(f"Missing type: {arg[0]!r}")
                 print(f'fputs("{arg[0]}", stderr);')
             print('fputs(",", stderr);')
-    print(f'fputs(")\\n", stderr);')
+    print('fputs(")", stderr);')
     print('}')
 
-print('void print_syscall(pid_t child, struct user_regs_struct *regs) {')
-print('switch (regs->orig_rax) {')
+print('''
+void print_syscall(pid_t child, struct user_regs_struct *regs, int isexit) {
+  switch (regs->orig_rax) {
+''')
 for nr, name, entrypoint, srcfile, args in calls.values():
     print(f'case {nr}: print_{name}(child, regs); break;')
-print(f'default: fprintf(stderr, "unknown_syscall_%d(...)\\n", (unsigned int)regs->orig_rax);')
-print('}')
-print('}')
+print('''
+    default: fprintf(stderr, "unknown_syscall_%d(...)\\n", (unsigned int)regs->orig_rax);
+  }
+  if (isexit)
+    fputs(" = ?\\n", stderr);
+  else
+    fprintf(stderr, " = %lld\\n", regs->rax);
+}''')

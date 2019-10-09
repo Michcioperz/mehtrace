@@ -15,18 +15,19 @@ int mehtrace(pid_t child) {
     perror("failed to PTRACE_SETOPTIONS");
     return EXIT_FAILURE;
   }
-  for (;;) {
+  struct user_regs_struct regs;
+  int isexit = 0;
+  for (;; isexit = !isexit) {
     if (ptrace(PTRACE_SYSCALL, child, NULL, 0)) {
       perror("failed to PTRACE_SYSCALL");
       return EXIT_FAILURE;
     }
     waitpid(child, NULL, 0);
-    struct user_regs_struct regs;
     if (ptrace(PTRACE_GETREGS, child, NULL, &regs)) {
       perror("failed to PTRACE_GETREGS");
       return EXIT_FAILURE;
     }
-    print_syscall(child, &regs);
+    print_syscall(child, &regs, isexit);
   }
 }
 
