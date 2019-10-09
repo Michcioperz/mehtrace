@@ -6,12 +6,15 @@ with open('TABELLA_64.json') as f:
 check_ptr = 'if (childAddr == NULL) return; '
 
 print_functions = {
-        "unsigned int": 'fprintf(stderr, "%u", (unsigned int)childAddr);',
+        "size_t": 'fprintf(stderr, "%zu", (size_t)childAddr);',
         "u64": 'fprintf(stderr, "%llu", (uint64_t)childAddr);',
+        "__u64": 'fprintf(stderr, "%llu", (uint64_t)childAddr);',
         "u32": 'fprintf(stderr, "%lu", (uint32_t)childAddr);',
+        "__s32": 'fprintf(stderr, "%ld", (int32_t)childAddr);',
         "long": 'fprintf(stderr, "%ld", (long)childAddr);',
         "unsigned long": 'fprintf(stderr, "%lu", (unsigned long)childAddr);',
         "unsigned": 'fprintf(stderr, "%u", (unsigned)childAddr);',
+        "unsigned int": 'fprintf(stderr, "%u", (unsigned int)childAddr);',
         "int": 'fprintf(stderr, "%d", (int)childAddr);',
 #        "char __user *": check_ptr+'char str[sizeof(childAddr)+1]; str[sizeof(childAddr)] = 0; for (void *data = 0xFFFFFFFFFFFFFFFF; 
 }
