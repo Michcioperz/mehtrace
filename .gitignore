@@ -4,3 +4,5 @@ mehtrace
 .ninja_log
 *.py[cod]
 __pycache__/
+TABELLA_64.json
+syscallprint.c
