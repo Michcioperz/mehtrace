@@ -54,6 +54,11 @@ for header in ['stdio.h', 'unistd.h', 'sys/types.h', 'stdint.h', 'ctype.h', 'sys
     print(f'#include <{header}>')
 print('#include "syscallprint.h"')
 
+print('''static char stderrbuf[4096];
+void init_printfd(void) {
+    setvbuf(stderr, stderrbuf, _IOLBF, sizeof(stderrbuf));
+}''')
+
 for i, tn in enumerate(print_function_idx):
     print(f'static void print_type_{i}(pid_t child, void *childAddr) {{ {print_functions[tn]} }}')
 

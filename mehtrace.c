@@ -9,6 +9,7 @@
 #include "syscallprint.h"
 
 int mehtrace(pid_t child) {
+  init_printfd();
 	fprintf(stderr, "%d\n", waitpid(child, NULL, 0));
 	if (ptrace(PTRACE_SETOPTIONS, child, NULL, PTRACE_O_EXITKILL)) {
 		perror("failed to PTRACE_SETOPTIONS");
