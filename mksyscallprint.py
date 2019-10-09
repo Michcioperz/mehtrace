@@ -6,6 +6,8 @@ with open('TABELLA_64.json') as f:
 check_ptr = 'if (childAddr == NULL) { fputs("NULL", stderr); return; } '
 
 print_functions = {
+        "dirfd": 'if ((int)childAddr == -100) fputs("AT_FDCWD", stderr); else fprintf(stderr, "%d", (int)childAddr);',
+        "umode_t": 'fprintf(stderr, "%#3o", (mode_t)childAddr);',
         "size_t": 'fprintf(stderr, "%zu", (size_t)childAddr);',
         "u64": 'fprintf(stderr, "%llu", (uint64_t)childAddr);',
         "__u64": 'fprintf(stderr, "%llu", (uint64_t)childAddr);',
@@ -47,15 +49,18 @@ print_functions["const char __user *"] = print_functions["char __user *"]
 print_function_idx = list(print_functions.keys())
 
 type_overrides = dict(
-    mmap=dict(addr="void *"),
+    mmap=dict(addr="void *", fd="int"),
+    mprotect=dict(start="void *"),
+    munmap=dict(addr="void *"),
     brk=dict(brk="void *"),
+    openat=dict(dfd="dirfd"),
 )
 
 missing_types = set()
 
 arg_regs = ['rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9']
 
-for header in ['stdio.h', 'unistd.h', 'sys/types.h', 'stdint.h', 'ctype.h', 'sys/ptrace.h', 'string.h']:
+for header in ['stdio.h', 'unistd.h', 'sys/types.h', 'stdint.h', 'ctype.h', 'sys/ptrace.h', 'string.h', 'sys/stat.h', 'fcntl.h']:
     print(f'#include <{header}>')
 print('#include "syscallprint.h"')
 
